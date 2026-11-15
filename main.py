@@ -1,5 +1,8 @@
 
-# Grid environment
+from collections import deque
+
+
+# 1. Create the grid
 
 grid = [
     [0, 0, 0, 0, 0],
@@ -13,19 +16,11 @@ start = (0, 0)
 goal = (4, 4)
 
 
-# Get grid dimensions
-
-rows = len(grid)
-cols = len(grid[0])
-
-
-# Check whether a position is valid
+# 2. Check valid positions
 
 def is_valid_position(grid, position):
 
     row, col = position
-
-    # Check grid boundaries
 
     if not (0 <= row < len(grid)):
         return False
@@ -33,70 +28,111 @@ def is_valid_position(grid, position):
     if not (0 <= col < len(grid[0])):
         return False
 
-    # Check obstacles
-
     if grid[row][col] == 1:
         return False
 
     return True
 
 
-# Find all valid neighbors
+# 3. Find valid neighbors
 
 def get_valid_neighbors(grid, position):
 
     row, col = position
 
-    # Four possible directions
-
-    import operator
-
     directions = [
-        (operator.neg(1), 0),  # Up
-        (1, 0),                # Down
-        (0, operator.neg(1)),  # Left
-        (0, 1)                 # Right
+        (-1, 0),  # Up
+        (1, 0),   # Down
+        (0, -1),  # Left
+        (0, 1)    # Right
     ]
 
     neighbors = []
 
-    # Check each direction
-
     for dr, dc in directions:
 
-        new_row = row + dr
-        new_col = col + dc
-
-        new_position = (new_row, new_col)
+        new_position = (row + dr, col + dc)
 
         if is_valid_position(grid, new_position):
-
             neighbors.append(new_position)
 
     return neighbors
 
 
-# Display agent movement possibilities
+# 4. Breadth First Search algorithm
 
-print("Starting Position:", start)
+def bfs(grid, start, goal):
 
-print("Goal Position:", goal)
+    # Create a queue
 
-print("\nValid Neighbors of Starting Position:")
+    queue = deque([start])
 
-neighbors = get_valid_neighbors(grid, start)
+    # Track visited positions
 
-for neighbor in neighbors:
-    print(neighbor)
+    visited = {start}
+
+    # Remember the parent of each position
+
+    parent = {start: None}
+
+    # Continue while the queue is not empty
+
+    while queue:
+
+        # Remove the first position
+
+        current = queue.popleft()
+
+        print("Exploring:", current)
+
+        # Check whether we reached the goal
+
+        if current == goal:
+
+            path = []
+
+            while current is not None:
+
+                path.append(current)
+
+                current = parent[current]
+
+            path.reverse()
+
+            return path
+
+        # Explore neighboring positions
+
+        for neighbor in get_valid_neighbors(grid, current):
+
+            if neighbor not in visited:
+
+                visited.add(neighbor)
+
+                parent[neighbor] = current
+
+                queue.append(neighbor)
+
+    # No path found
+
+    return None
 
 
-# Test another position
+# 5. Run BFS
 
-position = (2, 2)
+path = bfs(grid, start, goal)
 
-print("\nCurrent Agent Position:", position)
 
-print("Available Movements:")
+# 6. Display the final result
 
-for neighbor in get_valid_neighbors(grid, position):
-    print(neighbor)
+print("\nFinal Path:")
+
+if path:
+
+    print(path)
+
+    print("\nTotal Steps:", len(path) - 1)
+
+else:
+
+    print("No path found.")
