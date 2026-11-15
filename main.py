@@ -1,3 +1,4 @@
+
 # Grid environment
 
 grid = [
@@ -13,54 +14,89 @@ goal = (4, 4)
 
 
 # Get grid dimensions
+
 rows = len(grid)
 cols = len(grid[0])
 
 
-# Create an empty graph
-graph = {}
+# Check whether a position is valid
 
-# Add every free cell as a node
-for r in range(rows):
-    for c in range(cols):
+def is_valid_position(grid, position):
 
-        if grid[r][c] == 0:
-            graph[(r, c)] = []
+    row, col = position
 
+    # Check grid boundaries
 
-# Connect neighboring nodes
-for r in range(rows):
-    for c in range(cols):
+    if not (0 <= row < len(grid)):
+        return False
 
-        if grid[r][c] == 1:
-            continue
+    if not (0 <= col < len(grid[0])):
+        return False
 
-        current = (r, c)
+    # Check obstacles
 
-        # Check the right neighbor
-        if c + 1 < cols and grid[r][c + 1] == 0:
+    if grid[row][col] == 1:
+        return False
 
-            neighbor = (r, c + 1)
-
-            graph[current].append(neighbor)
-            graph[neighbor].append(current)
-
-        # Check the bottom neighbor
-        if r + 1 < rows and grid[r + 1][c] == 0:
-
-            neighbor = (r + 1, c)
-
-            graph[current].append(neighbor)
-            graph[neighbor].append(current)
+    return True
 
 
-# Display graph information
-print("Starting Node:", start)
-print("Goal Node:", goal)
+# Find all valid neighbors
 
-print("\nTotal Nodes:", len(graph))
+def get_valid_neighbors(grid, position):
 
-print("\nGraph Connections:")
+    row, col = position
 
-for node, neighbors in graph.items():
-    print(node, ":", neighbors)
+    # Four possible directions
+
+    import operator
+
+    directions = [
+        (operator.neg(1), 0),  # Up
+        (1, 0),                # Down
+        (0, operator.neg(1)),  # Left
+        (0, 1)                 # Right
+    ]
+
+    neighbors = []
+
+    # Check each direction
+
+    for dr, dc in directions:
+
+        new_row = row + dr
+        new_col = col + dc
+
+        new_position = (new_row, new_col)
+
+        if is_valid_position(grid, new_position):
+
+            neighbors.append(new_position)
+
+    return neighbors
+
+
+# Display agent movement possibilities
+
+print("Starting Position:", start)
+
+print("Goal Position:", goal)
+
+print("\nValid Neighbors of Starting Position:")
+
+neighbors = get_valid_neighbors(grid, start)
+
+for neighbor in neighbors:
+    print(neighbor)
+
+
+# Test another position
+
+position = (2, 2)
+
+print("\nCurrent Agent Position:", position)
+
+print("Available Movements:")
+
+for neighbor in get_valid_neighbors(grid, position):
+    print(neighbor)
