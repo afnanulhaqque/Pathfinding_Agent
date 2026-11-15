@@ -1,11 +1,16 @@
 
-from collections import deque
+import time
+import csv
+import os
+
+from algorithms import bfs, dijkstra, astar
+from visualization import visualize_path
 
 
-# 1. Create the grid
+# Grid configuration
 
 grid = [
-    [0, 0, 0, 0, 0],
+    [0, 0, 2, 0, 0],
     [0, 1, 1, 0, 0],
     [0, 0, 0, 0, 0],
     [0, 1, 1, 1, 0],
@@ -16,123 +21,135 @@ start = (0, 0)
 goal = (4, 4)
 
 
-# 2. Check valid positions
+# Calculate path length
 
-def is_valid_position(grid, position):
+def calculate_path_length(path):
 
-    row, col = position
+    if path is None:
+        return 0
 
-    if not (0 <= row < len(grid)):
-        return False
-
-    if not (0 <= col < len(grid[0])):
-        return False
-
-    if grid[row][col] == 1:
-        return False
-
-    return True
+    return len(path) - 1
 
 
-# 3. Find valid neighbors
+# Calculate total path cost
 
-def get_valid_neighbors(grid, position):
+def calculate_path_cost(grid, path):
 
-    row, col = position
+    if path is None:
+        return 0
 
-    directions = [
-        (-1, 0),  # Up
-        (1, 0),   # Down
-        (0, -1),  # Left
-        (0, 1)    # Right
-    ]
+    terrain_costs = {
+        0: 1,
+        2: 3,
+        3: 5
+    }
 
-    neighbors = []
+    total_cost = 0
 
-    for dr, dc in directions:
+    for row, col in path[1:]:
 
-        new_position = (row + dr, col + dc)
+        total_cost += terrain_costs[grid[row][col]]
 
-        if is_valid_position(grid, new_position):
-            neighbors.append(new_position)
-
-    return neighbors
+    return total_cost
 
 
-# 4. Breadth First Search algorithm
+# Run an algorithm and collect metrics
 
-def bfs(grid, start, goal):
+def run_algorithm(name, algorithm):
 
-    # Create a queue
+    start_time = time.perf_counter()
 
-    queue = deque([start])
+    path, expanded = algorithm(grid, start, goal)
 
-    # Track visited positions
+    end_time = time.perf_counter()
 
-    visited = {start}
+    execution_time = (end_time - start_time) * 1000
 
-    # Remember the parent of each position
+    result = {
+        "name": name,
+        "path": path,
+        "length": calculate_path_length(path),
+        "cost": calculate_path_cost(grid, path),
+        "expanded": expanded,
+        "time": execution_time
+    }
 
-    parent = {start: None}
-
-    # Continue while the queue is not empty
-
-    while queue:
-
-        # Remove the first position
-
-        current = queue.popleft()
-
-        print("Exploring:", current)
-
-        # Check whether we reached the goal
-
-        if current == goal:
-
-            path = []
-
-            while current is not None:
-
-                path.append(current)
-
-                current = parent[current]
-
-            path.reverse()
-
-            return path
-
-        # Explore neighboring positions
-
-        for neighbor in get_valid_neighbors(grid, current):
-
-            if neighbor not in visited:
-
-                visited.add(neighbor)
-
-                parent[neighbor] = current
-
-                queue.append(neighbor)
-
-    # No path found
-
-    return None
+    return result
 
 
-# 5. Run BFS
+# Select algorithms
 
-path = bfs(grid, start, goal)
+algorithms = [
+    ("BFS", bfs),
+    ("Dijkstra", dijkstra),
+    ("A Star", astar)
+]
 
 
-# 6. Display the final result
+# Run experiments
 
-print("\nFinal Path:")
+results = []
 
-if path:
+for name, algorithm in algorithms:
 
-    print(path)
+    result = run_algorithm(name, algorithm)
 
-    print("\nTotal Steps:", len(path) - 1)
+    results.append(result)
 
-else:
 
-    print("No path found.")
+# Display results
+
+print("\nPATHFINDING COMPARISON")
+
+print("=" * 60)
+
+for result in results:
+
+    print("\nAlgorithm:", result["name"])
+    print("Path:", result["path"])
+    print("Path Length:", result["length"])
+    print("Path Cost:", result["cost"])
+    print("Expanded Nodes:", result["expanded"])
+    print("Execution Time:", round(result["time"], 4), "ms")
+
+    visualize_path(
+        grid,
+        start,
+        goal,
+        result["path"],
+        result["name"]
+    )
+
+
+# Save results as CSV
+
+os.makedirs("results", exist_ok=True)
+
+with open(
+    "results/comparison.csv",
+    "w",
+    newline=""
+) as file:
+
+    writer = csv.writer(file)
+
+    writer.writerow([
+        "Algorithm",
+        "Path Length",
+        "Path Cost",
+        "Expanded Nodes",
+        "Execution Time"
+    ])
+
+    for result in results:
+
+        writer.writerow([
+            result["name"],
+            result["length"],
+            result["cost"],
+            result["expanded"],
+            round(result["time"], 4)
+        ])
+
+
+print("\nResults saved in results/comparison.csv")
